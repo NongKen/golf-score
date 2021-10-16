@@ -68,6 +68,11 @@ class Admin extends React.Component {
       const data = snapshot.val()
       this.setState({ feedRowHeight: data })
     })
+
+    rootRef.child('caddiePassword').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddiePassword: data })
+    })
   }
 
   onUpdateText() {
@@ -119,6 +124,11 @@ class Admin extends React.Component {
     const feedRowHeight = this.state.feedRowHeight
     rootRef.child('/feedRowHeight/').set(feedRowHeight)
   }
+
+  onUpdateCaddiePassword() {
+    const caddiePassword = this.state.caddiePassword
+    rootRef.child('/caddiePassword/').set(caddiePassword)
+  }
   
 
   render() {
@@ -157,6 +167,10 @@ class Admin extends React.Component {
         <br/>
         <input type="number" style={{ width: '500px'}} onChange={(e) => this.setState({ feedRowHeight: e.target.value})} value={this.state.feedRowHeight}></input>
         <button onClick={() => this.onUpdateFeedRowHeight  ()}>Set feed row height</button>
+        <br/>
+        <br/>
+        <input type="text" style={{ width: '500px'}} onChange={(e) => this.setState({ caddiePassword: e.target.value})} value={this.state.caddiePassword}></input>
+        <button onClick={() => this.onUpdateCaddiePassword  ()}>Set scorer password</button>
       </div>
     )
   }

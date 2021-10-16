@@ -1,11 +1,11 @@
 import React from 'react'
-import Link from 'next/link'
+import _ from 'lodash'
 
 import { Context, Container, FullBackground } from '../components/baseComponents'
 import Navbar from '../components/Navbar'
 import styled from 'styled-components'
 import firebase from '../libs/firebase'
-import config from '../config'
+import { convertTextData, calculateScore, calculateRanking, insertEmptyData } from '../libs/formatTextData'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
 
@@ -50,31 +50,6 @@ const TableItem = styled.div`
   color: ${props => props.color || 'black'};
 `
 
-const getSumShot = (data) => {
-  let sum = 0
-  data.forEach(shot => sum += +shot)
-  return sum
-}
-
-const checkDiffUserCourt = (userRaw, courtRaw) => {
-  let userDataWithIndex = userRaw.map((data, index) => {return {data, index}})
-  userDataWithIndex = userDataWithIndex.filter(data => data.data)
-  const userData = userDataWithIndex.map(data => data.data)
-  const userIndex = userDataWithIndex.map(data => data.index)
-  const courtWithUserlength = courtRaw.filter((data, index) => {
-    if (userIndex.includes(index)) {
-      return true
-    }
-    return false
-  })
-  const sumCourt = getSumShot(courtWithUserlength)
-  const sumShot = getSumShot(userData)
-  return {
-    sumCourt,
-    sumShot
-  }
-}
-
 const rowColorConfig = {
   '"a"': ['#bbbbbb', '#989898'],
   '"b"': ['#d6adad', '#e494a9'],
@@ -83,7 +58,6 @@ const rowColorConfig = {
 
 const getRowColor = (userData, userIndex) => {
   const keys = Object.keys(rowColorConfig)
-  console.log(keys, userData.group)
   if (keys.includes(userData.group)) {
     return rowColorConfig[userData.group][userIndex % 2]
   }
@@ -132,54 +106,10 @@ class Home extends React.Component {
     if (!this.state.textDb) {
       return (null)
     }
-    const row = this.state.textDb.split('""')
+    const { court: head, players: body } = calculateScore(convertTextData(this.state.textDb))
+    const filterdPlayingPlayers = _.filter(body, player => player.shotSummary)
 
-    const emptyData = {
-      dayOne: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      dayThree: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      dayTwo: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      name: '',
-      ranking: '',
-      score: ''
-    }
-
-    const data = row.map(rowData => {
-      const splitData = rowData.split('	')
-      const userData = {}
-      userData.ranking = splitData[1]
-      userData.score = splitData[2]
-      userData.name = splitData[3]
-      if (splitData[3]) {
-        userData.name = splitData[3].replace(/"/g, '')
-      }
-      userData.dayOne = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayOne.push(splitData[3+i])
-      }
-      userData.dayTwo = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayTwo.push(splitData[3+18+i])
-      }
-      userData.dayThree = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayThree.push(splitData[3+18+18+i])
-      }
-      userData.group = splitData[59]
-      return userData
-    })
-    const head = data[0]
-    const body = data.slice(1)
-    body.pop()
-
-    let i = 0
-
-    while(i<100) {
-      body.push(emptyData)
-      i++
-    }
-
-
-    const sumCourt = head[this.state.dayDisplay].reduce((a,b) => +a + + b)
+    const players = insertEmptyData(calculateRanking(filterdPlayingPlayers), 10)
 
     let dayDisplay = 'dayOne'
     if (this.state.selectedDay) {
@@ -209,9 +139,6 @@ class Home extends React.Component {
                     </TableItem>
                     {
                       head[dayDisplay].map((par, index) => {
-                        let prefix = 0
-                        if (dayDisplay === 'dayTwo') prefix = 1
-                        if (dayDisplay === 'dayThree') prefix = 2
                         return (
                           <TableItem width={tableConfig[3+index]}>
                             {index + 1  } ({par})
@@ -225,17 +152,15 @@ class Home extends React.Component {
                         dayDisplay === 'dayTwo' ? 'Day 2' : 'Day 3'
                         )
                       }
-                      <br />({sumCourt})
+                      <br />({head[`shot${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`]})
                     </TableItem>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {
-                    body.map((userData, userIndex) => {
-                      const shotData = checkDiffUserCourt(userData[dayDisplay], head[dayDisplay])
-                      const sumUser = userData[dayDisplay].reduce((a,b) => +a + + b)
-                      let { ranking } = userData
-                      if (userIndex != 0 && userData.score === body[userIndex - 1].score ) {
+                    players.map((userData, userIndex) => {
+                      let ranking = userData.ranking
+                      if (userIndex != 0 && userData.parSummary === players[userIndex - 1].parSummary ) {
                         ranking = ''
                       }
                       return (
@@ -246,9 +171,9 @@ class Home extends React.Component {
                           <TableItem align="left" width={tableConfig[1]}>
                             {userData.name}
                           </TableItem>
-                          <TableItem color={userData.score < 0 ? 'red' : userData.score > 0 ? 'blue' : null} width={tableConfig[2]}>
+                          <TableItem color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null} width={tableConfig[2]}>
                             {
-                              userData.score == 0 ? 'E' : userData.score > 0 ? `+${userData.score}` : userData.score
+                              userData.parSummary == 0 ? 'E' : userData.parSummary > 0 ? `+${userData.parSummary}` : userData.parSummary
                             }
                           </TableItem>
                           {
@@ -288,10 +213,25 @@ class Home extends React.Component {
                               )
                             })
                           }
-                          <TableItem color={shotData.sumShot - shotData.sumCourt < 0 ? 'red' : shotData.sumShot - shotData.sumCourt > 0 ? 'blue' : null} width={tableConfig[21]}>
-                            {shotData.sumShot - shotData.sumCourt == 0 ? 'E' : shotData.sumShot - shotData.sumCourt > 0 ? `+${shotData.sumShot - shotData.sumCourt}` : shotData.sumShot - shotData.sumCourt}
+                          <TableItem
+                            color={
+                              userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`] < 0
+                                ? 'red'
+                                : userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`] > 0
+                                  ? 'blue'
+                                  : null
+                            }
+                            width={tableConfig[21]}
+                          >
+                            {
+                              userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`] == 0
+                                ? 'E'
+                                : userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`] > 0
+                                  ? `+${userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`]}`
+                                  : userData[`par${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`]
+                            }
                             <span style={{color: "black"}}>
-                              {` (${shotData.sumShot})`}
+                              {` (${userData[`shot${dayDisplay[0].toUpperCase()}${dayDisplay.slice(1)}`]})`}
                             </span>
                           </TableItem>
                         </TableRow>
