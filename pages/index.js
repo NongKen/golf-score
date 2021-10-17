@@ -5,7 +5,7 @@ import { Context, Container, FullBackground } from '../components/baseComponents
 import Navbar from '../components/Navbar'
 import styled from 'styled-components'
 import firebase from '../libs/firebase'
-import { convertTextData, calculateScore, calculateRanking, insertEmptyData } from '../libs/formatTextData'
+import { convertTextData, calculateScore, calculateRanking, insertEmptyData, mergeCaddieData } from '../libs/formatTextData'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
 
@@ -73,6 +73,7 @@ class Home extends React.Component {
     this.state = {
       dayDisplay: 'dayThree',
       textDb: null,
+      caddieData: null,
       title: '',
       subTitle: '',
       selectedDay: '',
@@ -80,8 +81,11 @@ class Home extends React.Component {
     }
     rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
-      const updatedTime = Date.now()
-      this.setState({ textDb: data, updatedTime })
+      this.setState({ textDb: data })
+    })
+    rootRef.child('caddieData').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieData: data })
     })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
@@ -103,10 +107,14 @@ class Home extends React.Component {
   }
 
   render() {
-    if (!this.state.textDb) {
+    if (!this.state.textDb || !this.state.caddieData) {
       return (null)
     }
-    const { court: head, players: body } = calculateScore(convertTextData(this.state.textDb))
+    const playerData = convertTextData(this.state.textDb)
+    const caddieData = convertTextData(this.state.caddieData)
+    const mergedData = mergeCaddieData(playerData, caddieData)
+
+    const { court: head, players: body } = calculateScore(mergedData)
     const filterdPlayingPlayers = _.filter(body, player => player.shotSummary)
 
     const players = insertEmptyData(calculateRanking(filterdPlayingPlayers), 10)
@@ -178,37 +186,37 @@ class Home extends React.Component {
                           </TableItem>
                           {
                             userData[dayDisplay].map((hole, index) => {
-                              if (hole == 0) {
+                              if (+hole == 0 || !+hole) {
                                 return (
                                   <TableItem color="red" width={tableConfig[3 + index]} style={{ borderLeft: `1px solid ${index === 9 ? 'white' : 'black '}`, borderRight: `1px solid ${index === 8 ? 'white' : 'black '}`}}>
                                     {''}
                                   </TableItem>
                                 )
                               }
-                              if (hole == head[dayDisplay][index]) {
+                              if (+hole == head[dayDisplay][index]) {
                                 return (
                                   <TableItem color="white " width={tableConfig[3 + index]} style={{ borderLeft: `1px solid ${index === 9 ? 'white' : 'black '}`, borderRight: `1px solid ${index === 8 ? 'white' : 'black '}`}}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index] - 1) && hole) {
+                              if (parseInt(+hole) < parseInt(head[dayDisplay][index] - 1) && +hole) {
                                 return (
                                   <TableItem color="red" bgColor="#e6e66d" width={tableConfig[3 + index]} style={{ borderLeft: `1px solid ${index === 9 ? 'white' : 'black '}`, borderRight: `1px solid ${index === 8 ? 'white' : 'black '}`}}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index])) {
+                              if (parseInt(+hole) < parseInt(head[dayDisplay][index])) {
                                 return (
                                   <TableItem color="red" width={tableConfig[3 + index]} style={{ borderLeft: `1px solid ${index === 9 ? 'white' : 'black '}`, borderRight: `1px solid ${index === 8 ? 'white' : 'black '}`}}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
                               return (
                                   <TableItem width={tableConfig[3 + index]} style={{ borderLeft: `1px solid ${index === 9 ? 'white' : 'black '}`, borderRight: `1px solid ${index === 8 ? 'white' : 'black '}`}}>
-                                    {hole}
+                                    {+hole}
                                 </TableItem>
                               )
                             })

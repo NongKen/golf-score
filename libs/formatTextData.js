@@ -62,6 +62,44 @@ const convertTextData = (textDb) => {
   return {head, body}
 }
 
+const mergeRowCaddieData = (mainData, caddieData) => {
+  const formatedData = {}
+  Object.keys(mainData).forEach(key => {
+    if (_.isArray(mainData[key])) {
+      formatedData[key] = []
+      mainData[key].forEach((hole, index) => {
+        if (!+hole) {
+          formatedData[key][index] = caddieData[key][index]
+        } else {
+          formatedData[key][index] = hole
+        }
+      })
+    } else {
+      if (!mainData[key]) {
+        formatedData[key] = caddieData[key]
+      } else {
+        formatedData[key] = mainData[key]
+      }
+    }
+  })
+  return formatedData
+}
+
+const mergeCaddieData = (mainData, caddieData) => {
+  const mainHead = mainData.head
+  const caddieHead = caddieData.head
+  const formatedHead = mergeRowCaddieData(mainHead, caddieHead)
+
+  const mainBody = mainData.body
+  const caddieBody = caddieData.body
+  const formatedBody = mainBody.map((playerData) => {
+    const caddieData = caddieBody.find(caddieData => caddieData.name === playerData.name)
+    const formatedPlayer = mergeRowCaddieData(playerData || {}, caddieData || {})
+    return formatedPlayer
+  })
+  return { head: formatedHead, body: formatedBody }
+}
+
 const calculateScore = ({ head, body }) => {
   const sumCourtShotDayOne = head.dayOne.reduce((a,b) => +a + +b)
   const sumCourtShotDayTwo = head.dayTwo.reduce((a,b) => +a + +b)
@@ -161,5 +199,6 @@ export {
   calculateScore,
   calculateRanking,
   insertEmptyData,
+  mergeCaddieData,
   EMPTY_DATA
 }

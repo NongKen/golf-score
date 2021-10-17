@@ -4,7 +4,7 @@ import _ from 'lodash'
 import { Context, Container, FullBackground, Button } from '../components/baseComponents'
 import styled from 'styled-components'
 import firebase from '../libs/firebase'
-import { convertTextData, calculateScore, calculateRanking, EMPTY_DATA } from '../libs/formatTextData'
+import { convertTextData, calculateScore, calculateRanking, EMPTY_DATA, mergeCaddieData } from '../libs/formatTextData'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
 
@@ -131,10 +131,13 @@ class Home extends React.Component {
       skipping: 0,
       feedSize: 0
     }
-    rootRef.child('feed').on('value', (snapshot) => {
+    rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
-      const updatedTime = Date.now()
-      this.setState({ textDb: data, updatedTime })
+      this.setState({ textDb: data })
+    })
+    rootRef.child('caddieData').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieData: data })
     })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
@@ -184,11 +187,15 @@ class Home extends React.Component {
     if (!this.state.textDb || !this.state.feedPerPage) {
       return null
     }
-    const row = this.state.textDb.split('""')
+    const playerData = convertTextData(this.state.textDb)
+    const caddieData = convertTextData(this.state.caddieData)
+    const mergedData = mergeCaddieData(playerData, caddieData)
 
-    const data = row.map(rowData => rowData)
-    let body = data.slice(1)
-    if (this.state.skipping + this.state.feedPerPage >= body.length - 1) {
+    const { court: head, players: body } = calculateScore(mergedData)
+    const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)
+    const calculatedRankingPlayers = calculateRanking(filterdPlayingPlayers)
+
+    if (this.state.skipping + this.state.feedPerPage >= calculatedRankingPlayers.length - 1) {
       this.setState({ skipping: 0 })
     } else {
       this.setState({ skipping: this.state.skipping + this.state.feedPerPage })
@@ -203,8 +210,12 @@ class Home extends React.Component {
     if (!this.state.textDb || !this.state.feedPerPage) {
       return (null)
     }
-    const { court: head, players: body } = calculateScore(convertTextData(this.state.textDb))
-    const filterdPlayingPlayers = _.filter(body, player => player.shotSummary)
+    const playerData = convertTextData(this.state.textDb)
+    const caddieData = convertTextData(this.state.caddieData)
+    const mergedData = mergeCaddieData(playerData, caddieData)
+
+    const { court: head, players: body } = calculateScore(mergedData)
+    const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)
     const calculatedRankingPlayers = calculateRanking(filterdPlayingPlayers)
 
     let skippingFeedPlayers = calculatedRankingPlayers.slice(this.state.skipping, this.state.skipping + this.state.feedPerPage)
@@ -288,37 +299,37 @@ class Home extends React.Component {
                               const style = {}
                               if (index === 9)
                               style.paddingLeft = '2.2vw'
-                              if (hole == 0) {
+                              if (+hole == 0 || !+hole) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="red" style style={style}>
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style style={style}>
                                     {''}
                                   </Hole>
                                 )
                               }
-                              if (hole == head[dayDisplay][index]) {
+                              if (+hole == +head[dayDisplay][index]) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="white" style={style}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="white" style={style}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index] - 1) && hole) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index] - 1) && +hole) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="#e6e66d" style={Object.assign(style, {fontWeight: 'bold',textShadow: '0px 0px 8px #636363'})}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="#e6e66d" style={Object.assign(style, {fontWeight: 'bold',textShadow: '0px 0px 8px #636363'})}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index])) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index])) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="red" style={style}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style={style}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
                               return (
-                                <Hole value={hole} feedSize={this.state.feedSize} style={style}>
-                                  {hole}
+                                <Hole value={+hole} feedSize={this.state.feedSize} style={style}>
+                                  {+hole}
                                 </Hole>
                               )
                             })

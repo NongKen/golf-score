@@ -1,40 +1,27 @@
 import React from 'react'
-import Link from 'next/link'
-
-import styled from 'styled-components'
 import firebase from '../../libs/firebase'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
 
-const Table = styled.table`
-  border-collapse: collapse;
-` 
-
-const TableRow = styled.tr`
-  border-collapse: collapse;
-`
-
-const TableItem = styled.td`
-  border-collapse: collapse;
-`
 class Admin extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       textData: '',
+      caddieData: '',
       feed: '',
       title: '',
       subTitle: '',
       defaultDay: '1',
-      syncMobile: false
+      overideCaddie: false
     }
     rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
       this.setState({ textData: data })
     })
-    rootRef.child('feed').on('value', (snapshot) => {
+    rootRef.child('caddieData').on('value', (snapshot) => {
       const data = snapshot.val()
-      this.setState({ feed: data })
+      this.setState({ caddieData: data })
     })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
@@ -82,11 +69,11 @@ class Admin extends React.Component {
     }
   }
 
-  onUpdateFeed() {
-    const feed = this.state.feed
-    rootRef.child('/feed/').set(feed)
-    if (this.state.syncMobile) {
-      rootRef.child('/textDb/').set(feed)
+  onUpdateScore() {
+    const textData = this.state.textData
+    rootRef.child('/textDb/').set(textData)
+    if (this.state.overideCaddie) {
+      rootRef.child('/caddieData/').set(textData)
     }
   }
 
@@ -146,11 +133,10 @@ class Admin extends React.Component {
         <button onClick={() => this.onUpdateDefaultDay  ()}>Set default day</button>
         <br/>
         <br/>
-        <textarea onChange={(e) => this.setState({ feed: e.target.value})} value={this.state.feed}></textarea>
-        <button onClick={() => this.onUpdateFeed()}>Update Feed</button>
+        <textarea onChange={(e) => this.setState({ textData: e.target.value})} value={this.state.textData}></textarea>
+        <button onClick={() => this.onUpdateScore()}>Update Score</button>
         <br/>
-        <input type="checkbox" onChange={(e) => {this.setState({ syncMobile: e.target.checked })}} checked={this.state.syncMobile}/> check to sync to mobile
-        {/* <button onClick={() => this.onUpdateText()}>Sync to Main Page</button> */}
+        <input type="checkbox" onChange={(e) => {this.setState({ overideCaddie: e.target.checked })}} checked={this.state.overideCaddie}/> check to overide all caddie data
         <br/>
         <br/>
         <input type="number" style={{ width: '500px'}} onChange={(e) => this.setState({ feedDelay: e.target.value})} value={this.state.feedDelay}></input>

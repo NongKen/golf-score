@@ -3,7 +3,7 @@ import React from 'react'
 import { Context, Container, FullBackground, Image } from '../components/baseComponents'
 import styled from 'styled-components'
 import firebase from '../libs/firebase'
-import { convertTextData, insertEmptyData } from '../libs/formatTextData'
+import { convertTextData, insertEmptyData, mergeCaddieData } from '../libs/formatTextData'
 import _ from 'lodash'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
@@ -109,6 +109,7 @@ class Home extends React.Component {
     this.state = {
       dayDisplay: 'dayThree',
       textDb: null,
+      caddieData: null,
       title: '',
       subTitle: '',
       selectedDay: '',
@@ -127,6 +128,10 @@ class Home extends React.Component {
       const data = snapshot.val()
       const updatedTime = Date.now()
       this.setState({ textDb: data, updatedTime })
+    })
+    rootRef.child('caddieData').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieData: data })
     })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
@@ -185,10 +190,13 @@ class Home extends React.Component {
         </FullBackground>
       )
     }
-    if (!this.state.textDb) {
+    if (!this.state.textDb || !this.state.caddieData) {
       return (null)
     }
-    const { head, body } = convertTextData(this.state.textDb)
+
+    const playerData = convertTextData(this.state.textDb)
+    const caddieData = convertTextData(this.state.caddieData)
+    const { head, body } = mergeCaddieData(playerData, caddieData)
 
     let sortedBody = _.sortBy(_.sortBy(body, ['releaseGroup', 'releaseGroupPosition']), (o) => {
       if (!o.releaseGroup) {
@@ -273,37 +281,37 @@ class Home extends React.Component {
                               if(index >= this.props.url.query.group || index < this.props.url.query.group - 3) {
                                 return null
                               }
-                              if (+hole === 0 || !hole) {
+                              if (+hole === 0 || !+hole) {
                                 return (
                                   <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
                                     {''}
                                   </TableItem>
                                 )
                               }
-                              if (hole == head[dayDisplay][index]) {
+                              if (+hole == +head[dayDisplay][index]) {
                                 return (
                                   <TableItem color="white" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index] - 1) && hole) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index] - 1) && +hole) {
                                 return (
                                   <TableItem color="red" bgColor="#e6e66d" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index])) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index])) {
                                 return (
                                   <TableItem color="red" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
-                                    {hole}
+                                    {+hole}
                                   </TableItem>
                                 )
                               }
                               return (
                                 <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
-                                    {hole}
+                                    {+hole}
                                 </TableItem>
                               )
                             })
@@ -342,8 +350,8 @@ class Home extends React.Component {
               >
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  const textDb = this.state.textDb
-                  const row = textDb.split('""')
+                  const caddieData = this.state.caddieData
+                  const row = caddieData.split('""')
                   const data = row.map((rowData) => {
                     if (rowData.includes(`"${this.state.editedUser.name}"`)) {
                       const splitData = rowData.split('	')
@@ -355,29 +363,28 @@ class Home extends React.Component {
                       } else if (dayDisplay === 'dayThree') {
                         offsetIndex = 3 + 18 + 18
                       }
-                      splitData[offsetIndex + this.state.editedHole + 1] = this.state.editedScore
+                      splitData[offsetIndex + this.state.editedHole + 1] = +this.state.editedScore
                       const updatedData = splitData.join('	')
                       return updatedData
                     }
                     return rowData
                   })
                   const updatedData = data.join('""')
-                  rootRef.child('/textDb/').set(updatedData)
-                  rootRef.child('/feed/').set(updatedData)
+                  rootRef.child('/caddieData/').set(updatedData)
 
                   this.setState({
                     showModal: false,
                     editedHole: '',
                     editedUser: {},
                     editedScore: '',
-                    textDb: updatedData
+                    caddieData: updatedData
                   })
                 }}>
                   <div>{`แก้ไขคะแนน  วันที่ ${this.state.defaultDay}`}</div>
                   <div>ชื่อ: {this.state.editedUser.name}</div>
                   <div>หลุม: {this.state.editedHole + 1}</div>
-                  <div>จากคะแนน: {this.state.editedUser[dayDisplay][this.state.editedHole]}</div>
-                  <div>เป็นคะแนน: <input type="number" defaultValue={this.state.editedUser[dayDisplay][this.state.editedHole]} autoFocus onChange={(e) => this.setState({ editedScore: e.target.value })}/></div>
+                  <div>จากคะแนน: {+this.state.editedUser[dayDisplay][this.state.editedHole]}</div>
+                  <div>เป็นคะแนน: <input type="number" defaultValue={+this.state.editedUser[dayDisplay][this.state.editedHole]} autoFocus onChange={(e) => this.setState({ editedScore: e.target.value })}/></div>
                   <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-around' }}>
                     <input type="submit" name="submit" value="ยืนยัน" />
                     <button
