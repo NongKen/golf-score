@@ -244,10 +244,7 @@ class Home extends React.Component {
                     </TableItem>
                     {
                       head[dayDisplay].map((par, index) => {
-                        let prefix = 0
-                        if (dayDisplay === 'dayTwo') prefix = 1
-                        if (dayDisplay === 'dayThree') prefix = 2
-                        if(index >= this.props.url.query.group || index < this.props.url.query.group - 3) {
+                        if((index >= this.props.url.query.group || index < this.props.url.query.group - 3) && +this.props.url.query.group !== 99) {
                           return null
                         }
                         return (
@@ -278,7 +275,7 @@ class Home extends React.Component {
                           </TableItem>
                           {
                             userData[dayDisplay].map((hole, index) => {
-                              if(index >= this.props.url.query.group || index < this.props.url.query.group - 3) {
+                              if((index >= this.props.url.query.group || index < this.props.url.query.group - 3) && +this.props.url.query.group !== 99) {
                                 return null
                               }
                               if (+hole === 0 || !+hole) {
