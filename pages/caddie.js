@@ -121,6 +121,7 @@ class Home extends React.Component {
 
       showModal: false,
       editedHole: '',
+      editedScore: '',
       editedUser: {},
 
     }
@@ -280,34 +281,34 @@ class Home extends React.Component {
                               }
                               if (+hole === 0 || !+hole) {
                                 return (
-                                  <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
+                                  <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedScore: 0, editedUser: userData })}>
                                     {''}
                                   </TableItem>
                                 )
                               }
                               if (+hole == +head[dayDisplay][index]) {
                                 return (
-                                  <TableItem color="white" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
+                                  <TableItem color="white" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedScore: +hole, editedUser: userData })}>
                                     {+hole}
                                   </TableItem>
                                 )
                               }
                               if (parseInt(+hole) < parseInt(+head[dayDisplay][index] - 1) && +hole) {
                                 return (
-                                  <TableItem color="red" bgColor="#e6e66d" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
+                                  <TableItem color="red" bgColor="#e6e66d" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedScore: +hole, editedUser: userData })}>
                                     {+hole}
                                   </TableItem>
                                 )
                               }
                               if (parseInt(+hole) < parseInt(+head[dayDisplay][index])) {
                                 return (
-                                  <TableItem color="red" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
+                                  <TableItem color="red" width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedScore: +hole, editedUser: userData })}>
                                     {+hole}
                                   </TableItem>
                                 )
                               }
                               return (
-                                <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedUser: userData })}>
+                                <TableItem width={tableConfig[3 + index]} onClick={() => this.setState({ showModal: true, editedHole: index, editedScore: +hole, editedUser: userData })}>
                                     {+hole}
                                 </TableItem>
                               )
@@ -345,9 +346,9 @@ class Home extends React.Component {
                   borderRadius: '3px',
                 }}
               >
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
-                  const caddieData = this.state.caddieData
+                  const caddieData = await (await rootRef.child('/caddieData/').get()).val()
                   const row = caddieData.split('""')
                   const data = row.map((rowData) => {
                     if (rowData.includes(`"${this.state.editedUser.name}"`)) {
@@ -367,7 +368,7 @@ class Home extends React.Component {
                     return rowData
                   })
                   const updatedData = data.join('""')
-                  rootRef.child('/caddieData/').set(updatedData)
+                  await rootRef.child('/caddieData/').set(updatedData)
 
                   this.setState({
                     showModal: false,
@@ -381,7 +382,7 @@ class Home extends React.Component {
                   <div>ชื่อ: {this.state.editedUser.name}</div>
                   <div>หลุม: {this.state.editedHole + 1}</div>
                   <div>จากคะแนน: {+this.state.editedUser[dayDisplay][this.state.editedHole]}</div>
-                  <div>เป็นคะแนน: <input type="number" defaultValue={+this.state.editedUser[dayDisplay][this.state.editedHole]} autoFocus onChange={(e) => this.setState({ editedScore: e.target.value })}/></div>
+                  <div>เป็นคะแนน: <input type="number" defaultValue={+this.state.editedScore} autoFocus onChange={(e) => this.setState({ editedScore: e.target.value })}/></div>
                   <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'space-around' }}>
                     <input type="submit" name="submit" value="ยืนยัน" />
                     <button
