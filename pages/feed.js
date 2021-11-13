@@ -139,6 +139,14 @@ class Home extends React.Component {
       const data = snapshot.val()
       this.setState({ caddieData: data })
     })
+    rootRef.child('playerDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ playerDataSet: data })
+    })
+    rootRef.child('caddieDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieDataSet: data })
+    })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
       this.setState({ title: data })
@@ -207,12 +215,11 @@ class Home extends React.Component {
   }
 
   render() {
-    if (!this.state.textDb || !this.state.feedPerPage) {
+    if (!this.state.textDb || !this.state.caddieData || !this.state.playerDataSet || !this.state.caddieDataSet) {
       return (null)
     }
-    const playerData = convertTextData(this.state.textDb)
-    const caddieData = convertTextData(this.state.caddieData)
-    const mergedData = mergeCaddieData(playerData, caddieData)
+
+    const mergedData = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
 
     const { court: head, players: body } = calculateScore(mergedData)
     const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)

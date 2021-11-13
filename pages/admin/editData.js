@@ -1,5 +1,6 @@
 import React from 'react'
 import firebase from '../../libs/firebase'
+import { convertTextData } from '../../libs/formatTextData'
 
 const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
 
@@ -71,9 +72,12 @@ class Admin extends React.Component {
 
   onUpdateScore() {
     const textData = this.state.textData
+    const playerData = convertTextData(textData)
     rootRef.child('/textDb/').set(textData)
+    rootRef.child('/playerDataSet/').set(playerData)
     if (this.state.overideCaddie) {
       rootRef.child('/caddieData/').set(textData)
+      rootRef.child('/caddieDataSet/').set(playerData)
     }
   }
 

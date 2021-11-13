@@ -32,7 +32,7 @@ const convertTextData = (textDb) => {
     const userData = {}
 
     userData.releaseNumber = splitData[0].trim()
-    userData.releaseGroup = Number.parseInt(splitData[0].trim().slice(0, -1))
+    userData.releaseGroup = Number.parseInt(splitData[0].trim().slice(0, -1)) || 0
     userData.releaseGroupPosition = Number.parseInt(splitData[0].trim().slice(-1))
     userData.ranking = splitData[1]
     userData.score = splitData[2]

@@ -134,6 +134,15 @@ class Home extends React.Component {
       const data = snapshot.val()
       this.setState({ caddieData: data })
     })
+    rootRef.child('playerDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      const updatedTime = Date.now()
+      this.setState({ playerDataSet: data, updatedTime })
+    })
+    rootRef.child('caddieDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieDataSet: data })
+    })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
       this.setState({ title: data })
@@ -191,13 +200,11 @@ class Home extends React.Component {
         </FullBackground>
       )
     }
-    if (!this.state.textDb || !this.state.caddieData) {
+    if (!this.state.textDb || !this.state.caddieData || !this.state.playerDataSet || !this.state.caddieDataSet) {
       return (null)
     }
 
-    const playerData = convertTextData(this.state.textDb)
-    const caddieData = convertTextData(this.state.caddieData)
-    const { head, body } = mergeCaddieData(playerData, caddieData)
+    const { head, body } = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
 
     let sortedBody = _.sortBy(_.sortBy(body, ['releaseGroup', 'releaseGroupPosition']), (o) => {
       if (!o.releaseGroup) {
@@ -348,34 +355,20 @@ class Home extends React.Component {
               >
                 <form onSubmit={async (e) => {
                   e.preventDefault();
-                  const caddieData = await (await rootRef.child('/caddieData/').get()).val()
-                  const row = caddieData.split('""')
-                  const data = row.map((rowData) => {
-                    if (rowData.includes(`"${this.state.editedUser.name}"`)) {
-                      const splitData = rowData.split('	')
-                      let offsetIndex = 999
-                      if (dayDisplay === 'dayOne') {
-                        offsetIndex = 3
-                      } else if (dayDisplay === 'dayTwo') {
-                        offsetIndex = 3 + 18
-                      } else if (dayDisplay === 'dayThree') {
-                        offsetIndex = 3 + 18 + 18
-                      }
-                      splitData[offsetIndex + this.state.editedHole + 1] = +this.state.editedScore
-                      const updatedData = splitData.join('	')
-                      return updatedData
-                    }
-                    return rowData
-                  })
-                  const updatedData = data.join('""')
-                  await rootRef.child('/caddieData/').set(updatedData)
+                  const userData = this.state.editedUser
+                  const caddieDataSet = this.state.caddieDataSet
+                  const userIndex = caddieDataSet.body.findIndex(user => user.name === userData.name)
+                  caddieDataSet.body[userIndex][dayDisplay][this.state.editedHole] = `${this.state.editedScore}`
+                  
+                  // const updatedData = data.join('""')
+                  await rootRef.child(`/caddieDataSet/body/${userIndex}`).set(caddieDataSet.body[userIndex])
 
                   this.setState({
                     showModal: false,
                     editedHole: '',
                     editedUser: {},
                     editedScore: '',
-                    caddieData: updatedData
+                    caddieDataSet,
                   })
                 }}>
                   <div>{`แก้ไขคะแนน  วันที่ ${this.state.defaultDay}`}</div>
