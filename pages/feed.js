@@ -1,11 +1,10 @@
 import React from 'react'
-import Link from 'next/link'
+import _ from 'lodash'
 
 import { Context, Container, FullBackground, Button } from '../components/baseComponents'
-import Navbar from '../components/Navbar'
 import styled from 'styled-components'
 import firebase from '../libs/firebase'
-import config from '../config'
+import { convertTextData, calculateScore, calculateRanking, EMPTY_DATA, mergeCaddieData } from '../libs/formatTextData'
 
 const rootRef = firebase.database().ref('golfscore/tspgalivegolfscore')
 
@@ -102,33 +101,6 @@ const Round = styled(TableItem)`
   }}vw;
 `
 
-
-
-const getSumShot = (data) => {
-  let sum = 0
-  data.forEach(shot => sum += +shot)
-  return sum
-}
-
-const checkDiffUserCourt = (userRaw, courtRaw) => {
-  let userDataWithIndex = userRaw.map((data, index) => {return {data, index}})
-  userDataWithIndex = userDataWithIndex.filter(data => data.data)
-  const userData = userDataWithIndex.map(data => data.data)
-  const userIndex = userDataWithIndex.map(data => data.index)
-  const courtWithUserlength = courtRaw.filter((data, index) => {
-    if (userIndex.includes(index)) {
-      return true
-    }
-    return false
-  })
-  const sumCourt = getSumShot(courtWithUserlength)
-  const sumShot = getSumShot(userData)
-  return {
-    sumCourt,
-    sumShot
-  }
-}
-
 const rowColorConfig = {
   '"a"': ['#bbbbbb', '#b3b3b3'],
   '"b"': ['#d6adad', '#e494a9'],
@@ -159,10 +131,21 @@ class Home extends React.Component {
       skipping: 0,
       feedSize: 0
     }
-    rootRef.child('feed').on('value', (snapshot) => {
+    rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
-      const updatedTime = Date.now()
-      this.setState({ textDb: data, updatedTime })
+      this.setState({ textDb: data })
+    })
+    rootRef.child('caddieData').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieData: data })
+    })
+    rootRef.child('playerDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ playerDataSet: data })
+    })
+    rootRef.child('caddieDataSet').on('value', (snapshot) => {
+      const data = snapshot.val()
+      this.setState({ caddieDataSet: data })
     })
     rootRef.child('title').on('value', (snapshot) => {
       const data = snapshot.val()
@@ -212,11 +195,15 @@ class Home extends React.Component {
     if (!this.state.textDb || !this.state.feedPerPage) {
       return null
     }
-    const row = this.state.textDb.split('""')
+    const playerData = convertTextData(this.state.textDb)
+    const caddieData = convertTextData(this.state.caddieData)
+    const mergedData = mergeCaddieData(playerData, caddieData)
 
-    const data = row.map(rowData => rowData)
-    let body = data.slice(1)
-    if (this.state.skipping + this.state.feedPerPage >= body.length - 1) {
+    const { court: head, players: body } = calculateScore(mergedData)
+    const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)
+    const calculatedRankingPlayers = calculateRanking(filterdPlayingPlayers)
+
+    if (this.state.skipping + this.state.feedPerPage >= calculatedRankingPlayers.length - 1) {
       this.setState({ skipping: 0 })
     } else {
       this.setState({ skipping: this.state.skipping + this.state.feedPerPage })
@@ -228,61 +215,20 @@ class Home extends React.Component {
   }
 
   render() {
-    if (!this.state.textDb || !this.state.feedPerPage) {
+    if (!this.state.textDb || !this.state.caddieData || !this.state.playerDataSet || !this.state.caddieDataSet) {
       return (null)
     }
-    const row = this.state.textDb.split('""')
 
-    const emptyData = {
-      dayOne: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      dayThree: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      dayTwo: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-      name: '',
-      ranking: '',
-      score: ''
+    const mergedData = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
+
+    const { court: head, players: body } = calculateScore(mergedData)
+    const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)
+    const calculatedRankingPlayers = calculateRanking(filterdPlayingPlayers)
+
+    let skippingFeedPlayers = calculatedRankingPlayers.slice(this.state.skipping, this.state.skipping + this.state.feedPerPage)
+    while(skippingFeedPlayers.length < this.state.feedPerPage) {
+      skippingFeedPlayers.push(EMPTY_DATA)
     }
-
-    const data = row.map(rowData => {
-      const splitData = rowData.split('	')
-      const userData = {}
-      userData.ranking = splitData[1]
-      userData.score = splitData[2]
-      userData.name = splitData[3]
-      if (splitData[3]) {
-        userData.name = splitData[3].replace(/"/g, '')
-      }
-      userData.dayOne = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayOne.push(splitData[3+i])
-      }
-      userData.dayTwo = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayTwo.push(splitData[3+18+i])
-      }
-      userData.dayThree = []
-      for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
-        userData.dayThree.push(splitData[3+18+18+i])
-      }
-      userData.group = splitData[59]
-      return userData
-    })
-    const head = data[0]
-    let body = data.slice(1)
-    body.pop()
-    body = body.map((userData, userIndex, array) => {
-      let { ranking } = userData
-      if (userIndex != 0 && userData.score === body[userIndex - 1].score ) {
-        ranking = array.find(ele => ele.score === userData.score && ele.group === userData.group).ranking
-      }
-      return Object.assign({}, userData, { ranking } )
-    })
-    body = body.slice(this.state.skipping, this.state.skipping + this.state.feedPerPage)
-    while(body.length < this.state.feedPerPage) {
-      body.push(emptyData)
-    }
-
-
-    const sumCourt = head[this.state.dayDisplay].reduce((a,b) => +a + + b)
 
     let dayDisplay = 'dayOne'
     if (this.state.selectedDay) {
@@ -308,9 +254,6 @@ class Home extends React.Component {
                     </Name>
                     {
                       head[dayDisplay].map((par, index) => {
-                        let prefix = 0
-                        if (dayDisplay === 'dayTwo') prefix = 1
-                        if (dayDisplay === 'dayThree') prefix = 2
                         if (index === 9) {
                           return (
                             <HoleHeader feedSize={this.state.feedSize} width={tableConfig[3+index]} style={{ paddingLeft: '2.2vw'}}>
@@ -345,14 +288,9 @@ class Home extends React.Component {
                 </TableHead>
                 <TableBody>
                   {
-                    body.map((userData, userIndex) => {
-                      const shotData = checkDiffUserCourt(userData[dayDisplay], head[dayDisplay])
-                      const shotData1 = checkDiffUserCourt(userData['dayOne'], head['dayOne'])
-                      const shotData2 = checkDiffUserCourt(userData['dayTwo'], head['dayTwo'])
-                      const shotData3 = checkDiffUserCourt(userData['dayThree'], head['dayThree'])
-                      // const sumUser = userData[dayDisplay].reduce((a,b) => +a + + b)
-                      let { ranking } = userData
-                      if (userIndex != 0 && userData.score === body[userIndex - 1].score ) {
+                    skippingFeedPlayers.map((userData, userIndex) => {
+                      let ranking = userData.ranking
+                      if (userIndex != 0 && userData.parSummary === skippingFeedPlayers[userIndex - 1].parSummary ) {
                         ranking = ''
                       }
                       return (
@@ -368,59 +306,59 @@ class Home extends React.Component {
                               const style = {}
                               if (index === 9)
                               style.paddingLeft = '2.2vw'
-                              if (hole == 0) {
+                              if (+hole == 0 || !+hole) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="red" style style={style}>
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style style={style}>
                                     {''}
                                   </Hole>
                                 )
                               }
-                              if (hole == head[dayDisplay][index]) {
+                              if (+hole == +head[dayDisplay][index]) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="white" style={style}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="white" style={style}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index] - 1) && hole) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index] - 1) && +hole) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="#e6e66d" style={Object.assign(style, {fontWeight: 'bold',textShadow: '0px 0px 8px #636363'})}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="#e6e66d" style={Object.assign(style, {fontWeight: 'bold',textShadow: '0px 0px 8px #636363'})}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
-                              if (parseInt(hole) < parseInt(head[dayDisplay][index])) {
+                              if (parseInt(+hole) < parseInt(+head[dayDisplay][index])) {
                                 return (
-                                  <Hole value={hole} feedSize={this.state.feedSize} color="red" style={style}>
-                                    {hole}
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style={style}>
+                                    {+hole}
                                   </Hole>
                                 )
                               }
                               return (
-                                <Hole value={hole} feedSize={this.state.feedSize} style={style}>
-                                  {hole}
+                                <Hole value={+hole} feedSize={this.state.feedSize} style={style}>
+                                  {+hole}
                                 </Hole>
                               )
                             })
                           }
-                          <Score feedSize={this.state.feedSize} color={userData.score < 0 ? 'red' : userData.score > 0 ? 'blue' : null}>
+                          <Score feedSize={this.state.feedSize} color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null}>
                             {
-                              userData.score == 0 ? 'E' : userData.score > 0 ? `+${userData.score}` : userData.score
+                              userData.parSummary == 0 ? 'E' : userData.parSummary > 0 ? `+${userData.parSummary}` : userData.parSummary
                             }
                           </Score>
-                          <Round value={shotData1.sumShot} feedSize={this.state.feedSize} color={shotData1.sumShot - shotData1.sumCourt < 0 ? 'red' : shotData1.sumShot - shotData1.sumCourt > 0 ? 'blue' : null} width={tableConfig[21]}>
+                          <Round value={userData.shotDayOne} feedSize={this.state.feedSize} color={userData.shotDayOne - head.shotDayOne < 0 ? 'red' : userData.shotDayOne - head.shotDayOne > 0 ? 'blue' : null} width={tableConfig[21]}>
                             <span style={{color: "black"}}>
-                              {shotData1.sumShot}
+                              {userData.shotDayOne}
                             </span>
                           </Round>
-                          <Round value={shotData2.sumShot} feedSize={this.state.feedSize} color={shotData2.sumShot - shotData2.sumCourt < 0 ? 'red' : shotData2.sumShot - shotData2.sumCourt > 0 ? 'blue' : null} width={tableConfig[21]}>
+                          <Round value={userData.shotDayTwo} feedSize={this.state.feedSize} color={userData.shotDayTwo - head.shotDayTwo < 0 ? 'red' : userData.shotDayTwo - head.shotDayTwo > 0 ? 'blue' : null} width={tableConfig[21]}>
                             <span style={{color: "black"}}>
-                              {shotData2.sumShot}
+                              {userData.shotDayTwo}
                             </span>
                           </Round>
-                          <Round value={shotData3.sumShot} feedSize={this.state.feedSize} color={shotData3.sumShot - shotData3.sumCourt < 0 ? 'red' : shotData3.sumShot - shotData3.sumCourt > 0 ? 'blue' : null} width={tableConfig[21]}>
+                          <Round value={userData.shotDayThree} feedSize={this.state.feedSize} color={userData.shotDayThree - head.shotDayThree < 0 ? 'red' : userData.shotDayThree - head.shotDayThree > 0 ? 'blue' : null} width={tableConfig[21]}>
                             <span style={{color: "black"}}>
-                              {shotData3.sumShot}
+                              {userData.shotDayThree}
                             </span>
                           </Round>
                         </TableRow>
