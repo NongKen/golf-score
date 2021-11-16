@@ -6,7 +6,7 @@ import firebase from '../libs/firebase'
 import { convertTextData, insertEmptyData, mergeCaddieData } from '../libs/formatTextData'
 import _ from 'lodash'
 
-const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
+const rootRef = firebase.database().ref('golfscore/tspgalivegolfscore')
 
 const TableWrapper = styled.div`
   height: 100vh;
@@ -228,7 +228,7 @@ class Home extends React.Component {
           <Container>
             <div style={{ backgroundColor: '#f3ffe6', textAlign: 'center' }}>
               <div>
-                <Image src="/static/logo/logo.png" height="80px" />
+                <Image src="/static/logo/logo_spga.png" height="80px" />
               </div>
               <div style={{paddingLeft: '12px', fontSize: '24px'}}>
                 {this.state.title}
