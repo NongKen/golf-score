@@ -195,9 +195,7 @@ class Home extends React.Component {
     if (!this.state.textDb || !this.state.feedPerPage) {
       return null
     }
-    const playerData = convertTextData(this.state.textDb)
-    const caddieData = convertTextData(this.state.caddieData)
-    const mergedData = mergeCaddieData(playerData, caddieData)
+    const mergedData = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
 
     const { court: head, players: body } = calculateScore(mergedData)
     const filterdPlayingPlayers = _.filter(body, player => +player.shotSummary)
