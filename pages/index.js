@@ -7,7 +7,7 @@ import styled from 'styled-components'
 import firebase from '../libs/firebase'
 import { convertTextData, calculateScore, calculateRanking, insertEmptyData, mergeCaddieData } from '../libs/formatTextData'
 
-const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
+let rootRef = null
 
 const TableWrapper = styled.div`
   height: 100vh;
@@ -70,7 +70,11 @@ const tableConfig = ['25px', '200px', '50px', '25px', '25px', '25px', '25px', '2
 class Home extends React.Component {
   constructor(props) {
     super(props)
+    if (typeof window !== 'object') {
+      return null
+    }
     this.state = {
+      NEXT_PUBLIC_LEAGUE: window.NEXT_PUBLIC_LEAGUE,
       dayDisplay: 'dayThree',
       textDb: null,
       caddieData: null,
@@ -79,6 +83,9 @@ class Home extends React.Component {
       selectedDay: '',
       defaultDay: '1'
     }
+
+    rootRef = firebase.database().ref(`golfscore/${this.state.NEXT_PUBLIC_LEAGUE}`)
+
     rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
       this.setState({ textDb: data })
@@ -115,6 +122,9 @@ class Home extends React.Component {
   }
 
   render() {
+    if (typeof window !== 'object') {
+      return null
+    }
     if (!this.state.textDb || !this.state.caddieData || !this.state.playerDataSet || !this.state.caddieDataSet) {
       return (null)
     }

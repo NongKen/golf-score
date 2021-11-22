@@ -2,12 +2,16 @@ import React from 'react'
 import firebase from '../../libs/firebase'
 import { convertTextData } from '../../libs/formatTextData'
 
-const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
+let rootRef = null
 
 class Admin extends React.Component {
   constructor(props) {
     super(props)
+    if (typeof window !== 'object') {
+      return null
+    }
     this.state = {
+      NEXT_PUBLIC_LEAGUE: window.NEXT_PUBLIC_LEAGUE,
       textData: '',
       caddieData: '',
       feed: '',
@@ -16,6 +20,9 @@ class Admin extends React.Component {
       defaultDay: '1',
       overideCaddie: false
     }
+
+    rootRef = firebase.database().ref(`golfscore/${this.state.NEXT_PUBLIC_LEAGUE}`)
+
     rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
       this.setState({ textData: data })
@@ -123,6 +130,9 @@ class Admin extends React.Component {
   
 
   render() {
+    if (typeof window !== 'object') {
+      return null
+    }
     return (
       <div>
         <input style={{ width: '500px'}} onChange={(e) => this.setState({ title: e.target.value})} value={this.state.title}></input>

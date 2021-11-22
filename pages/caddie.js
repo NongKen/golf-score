@@ -6,7 +6,7 @@ import firebase from '../libs/firebase'
 import { convertTextData, insertEmptyData, mergeCaddieData } from '../libs/formatTextData'
 import _ from 'lodash'
 
-const rootRef = firebase.database().ref('golfscore/tctlivegolfscore')
+let rootRef = null
 
 const TableWrapper = styled.div`
   height: 100vh;
@@ -106,7 +106,11 @@ const tableConfig = ['25px', '200px', '50px', '25px', '25px', '25px', '25px', '2
 class Home extends React.Component {
   constructor(props) {
     super(props)
+    if (typeof window !== 'object') {
+      return null
+    }
     this.state = {
+      NEXT_PUBLIC_LEAGUE: window.NEXT_PUBLIC_LEAGUE,
       dayDisplay: 'dayThree',
       textDb: null,
       caddieData: null,
@@ -123,8 +127,10 @@ class Home extends React.Component {
       editedHole: '',
       editedScore: '',
       editedUser: {},
-
     }
+
+    rootRef = firebase.database().ref(`golfscore/${this.state.NEXT_PUBLIC_LEAGUE}`)
+
     rootRef.child('textDb').on('value', (snapshot) => {
       const data = snapshot.val()
       const updatedTime = Date.now()
@@ -167,6 +173,9 @@ class Home extends React.Component {
   }
 
   render() {
+    if (typeof window !== 'object') {
+      return null
+    }
     if (this.state.caddiePassword != this.state.caddiePasswordSubmitted) {
       return (
         <FullBackground color="#cecece">
@@ -228,7 +237,7 @@ class Home extends React.Component {
           <Container>
             <div style={{ backgroundColor: '#f3ffe6', textAlign: 'center' }}>
               <div>
-                <Image src="/static/logo/logo.png" height="80px" />
+                <Image src={`/static/logo/${this.state.NEXT_PUBLIC_LEAGUE}.png`} height="80px" />
               </div>
               <div style={{paddingLeft: '12px', fontSize: '24px'}}>
                 {this.state.title}
