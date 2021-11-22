@@ -14,7 +14,7 @@ const NavbarContainer = styled.div`
 
 const FlexWrapper = styled.div`
   display: flex;
-  
+  flex-direction: ${(props) => props.direction ? props.direction : 'row'};
 `
 
 const TabContainer = styled.div`
@@ -57,9 +57,9 @@ const Navbar = (props) => {
       <NavbarContainer>
         <FlexWrapper>
           <div>
-            <Image src="/static/logo/logo_spga.png" width="56px"/>
+            <Image src={`/static/logo/${props.NEXT_PUBLIC_LEAGUE}.png`} height="80px" />
           </div>
-          <FlexWrapper style={{ 'flex-direction': "column"}}>
+          <FlexWrapper direction="column">
             <div style={{paddingLeft: '12px', fontSize: '24px'}}>
               {props.title}
             </div>
