@@ -6,6 +6,8 @@ const EMPTY_DATA = {
   dayTwo: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
   name: '',
   ranking: '',
+  country: '',
+  countryFlag: '',
 
   group: "",
   parDayOne: 0,
@@ -25,10 +27,10 @@ const EMPTY_DATA = {
 }
 
 const convertTextData = (textDb) => {
-  const row = textDb.split('""')
+  const row = textDb.split('\n')
 
   const data = row.map(rowData => {
-    const splitData = rowData.split('	')
+    const splitData = rowData.replace(/"/g, '').split('	')
     const userData = {}
 
     userData.releaseNumber = splitData[0].trim()
@@ -37,9 +39,7 @@ const convertTextData = (textDb) => {
     userData.ranking = splitData[1]
     userData.score = splitData[2]
     userData.name = splitData[3]
-    if (splitData[3]) {
-      userData.name = splitData[3].replace(/"/g, '')
-    }
+
     userData.dayOne = []
     for (const i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]) {
       userData.dayOne.push(splitData[3+i])
@@ -53,6 +53,11 @@ const convertTextData = (textDb) => {
       userData.dayThree.push(splitData[3+18+18+i])
     }
     userData.group = splitData[59]
+
+    if (splitData[60]) {
+      userData.country = splitData[60]
+      userData.countryFlag = splitData[60].replace(/./g, (char) => String.fromCodePoint(char.charCodeAt(0) + 127397))
+    }
     return userData
   })
   const head = data[0]

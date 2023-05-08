@@ -307,7 +307,7 @@ class Home extends React.Component {
                             {ranking}
                           </Rank>
                           <Name feedSize={this.state.feedSize} align="left">
-                            {userData.name}
+                            {`${userData.name} ${userData.countryFlag || userData.country}`}
                           </Name>
                           {
                             userData[dayDisplay].map((hole, index) => {
@@ -316,7 +316,7 @@ class Home extends React.Component {
                               style.paddingLeft = '2.2vw'
                               if (+hole == 0 || !+hole) {
                                 return (
-                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style style={style}>
+                                  <Hole value={+hole} feedSize={this.state.feedSize} color="red" style={style}>
                                     {''}
                                   </Hole>
                                 )

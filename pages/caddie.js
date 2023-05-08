@@ -288,7 +288,7 @@ class Home extends React.Component {
                             {releaseNumber}
                           </TableItem>
                           <TableItem align="left" width={tableConfig[1]}>
-                            {userData.name}
+                            {`${userData.name} ${userData.countryFlag || userData.country}`}
                           </TableItem>
                           {
                             userData[dayDisplay].map((hole, index) => {

@@ -194,7 +194,7 @@ class Home extends React.Component {
                             {ranking}
                           </TableItem>
                           <TableItem align="left" width={tableConfig[1]}>
-                            {userData.name}
+                            {`${userData.name} ${userData.countryFlag || userData.country}`}
                           </TableItem>
                           <TableItem color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null} width={tableConfig[2]}>
                             {
