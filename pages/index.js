@@ -40,6 +40,8 @@ const TableRow = styled.div`
 `
 
 const TableItem = styled.div`
+  display: ${props => props.display || 'block'};
+  justify-content: center;
   padding: 6px 8px;
   border: 1px solid black;
   overflow: hidden;
@@ -64,7 +66,7 @@ const getRowColor = (userData, userIndex) => {
   return rowColorConfig['"a"'][userIndex % 2]
 }
 
-const tableConfig = ['25px', '200px', '50px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '25px', '75px']
+const tableConfig = ['25px', '310px', '30px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '75px']
 
 
 class Home extends React.Component {
@@ -129,6 +131,9 @@ class Home extends React.Component {
       return (null)
     }
 
+    console.log(this.state.playerDataSet)
+    console.log(this.state.caddieDataSet)
+
     const mergedData = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
 
     const { court: head, players: body } = calculateScore(mergedData)
@@ -159,13 +164,13 @@ class Home extends React.Component {
                     <TableItem align="center" width={tableConfig[1]}>
                       Name
                     </TableItem>
-                    <TableItem width={tableConfig[2]}>
+                    <TableItem width={tableConfig[2]} display="flex">
                       Score
                     </TableItem>
                     {
                       head[dayDisplay].map((par, index) => {
                         return (
-                          <TableItem width={tableConfig[3+index]}>
+                          <TableItem width={tableConfig[3+index]} display="flex">
                             {index + 1  } ({par})
                           </TableItem>
                         )
@@ -188,13 +193,21 @@ class Home extends React.Component {
                       if (userIndex != 0 && userData.parSummary === players[userIndex - 1].parSummary ) {
                         ranking = ''
                       }
+
+                      let playerName = userData.name
+                      if (userData.countryFlag) {
+                        playerName = `${userData.name} ${userData.countryFlag}`
+                      } else if (userData.country) {
+                        playerName = `${userData.name} (${userData.countryFlag})` 
+                      }
+
                       return (
                         <TableRow bgColor={getRowColor(userData, userIndex)}>
                           <TableItem width={tableConfig[0]}>
                             {ranking}
                           </TableItem>
                           <TableItem align="left" width={tableConfig[1]}>
-                            {`${userData.name} ${userData.countryFlag || userData.country}`}
+                            {playerName}
                           </TableItem>
                           <TableItem color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null} width={tableConfig[2]}>
                             {

@@ -301,13 +301,21 @@ class Home extends React.Component {
                       if (userIndex != 0 && userData.parSummary === skippingFeedPlayers[userIndex - 1].parSummary ) {
                         ranking = ''
                       }
+
+                      let playerName = userData.name
+                      if (userData.countryFlag) {
+                        playerName = `${userData.name} ${userData.countryFlag}`
+                      } else if (userData.country) {
+                        playerName = `${userData.name} (${userData.countryFlag})` 
+                      }
+
                       return (
                         <TableRow {...this.state} bgColor={getRowColor(userData, userIndex)}>
                           <Rank feedSize={this.state.feedSize}>
                             {ranking}
                           </Rank>
                           <Name feedSize={this.state.feedSize} align="left">
-                            {`${userData.name} ${userData.countryFlag || userData.country}`}
+                            {playerName}
                           </Name>
                           {
                             userData[dayDisplay].map((hole, index) => {
