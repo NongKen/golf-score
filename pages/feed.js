@@ -310,7 +310,7 @@ class Home extends React.Component {
                           <Name feedSize={this.state.feedSize} align="left">
                             {userData.name}
                             {
-                              userData.countryFlag && <span style={{ marginLeft: 12 }}>{userData.countryFlag}</span>
+                              userData.countryFlag && <b style={{ marginLeft: 8 }}>{userData.countryFlag}</b>
                             }
                           </Name>
                           {
