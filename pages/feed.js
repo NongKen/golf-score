@@ -307,10 +307,10 @@ class Home extends React.Component {
                           <Rank feedSize={this.state.feedSize}>
                             {ranking}
                           </Rank>
-                          <Name feedSize={this.state.feedSize} align="left" style={{ position: 'relative'}}>
+                          <Name feedSize={this.state.feedSize} align="left">
                             {userData.name}
                             {
-                              userData.countryFlag && <span style={{ marginLeft: 12, fontSize: 44, position: 'absolute', top: -8 }}>{userData.countryFlag}</span>
+                              userData.countryFlag && <span style={{ marginLeft: 12 }}>{userData.countryFlag}</span>
                             }
                           </Name>
                           {
