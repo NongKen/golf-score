@@ -302,20 +302,16 @@ class Home extends React.Component {
                         ranking = ''
                       }
 
-                      let playerName = userData.name
-                      if (userData.countryFlag) {
-                        playerName = `${userData.name} ${userData.countryFlag}`
-                      } else if (userData.country) {
-                        playerName = `${userData.name} (${userData.countryFlag})` 
-                      }
-
                       return (
                         <TableRow {...this.state} bgColor={getRowColor(userData, userIndex)}>
                           <Rank feedSize={this.state.feedSize}>
                             {ranking}
                           </Rank>
-                          <Name feedSize={this.state.feedSize} align="left">
-                            {playerName}
+                          <Name feedSize={this.state.feedSize} align="left" style={{ position: 'relative'}}>
+                            {userData.name}
+                            {
+                              userData.countryFlag && <span style={{ marginLeft: 12, fontSize: 44, position: 'absolute', top: -8 }}>{userData.countryFlag}</span>
+                            }
                           </Name>
                           {
                             userData[dayDisplay].map((hole, index) => {

@@ -283,20 +283,13 @@ class Home extends React.Component {
                         return null
                       }
 
-                      let playerName = userData.name
-                      if (userData.countryFlag) {
-                        playerName = `${userData.name} ${userData.countryFlag}`
-                      } else if (userData.country) {
-                        playerName = `${userData.name} (${userData.countryFlag})` 
-                      }
-
                       return (
                         <TableRow bgColor={getRowColor(userData, userIndex)}>
                           <TableItem width={tableConfig[0]}>
                             {releaseNumber}
                           </TableItem>
                           <TableItem align="left" width={tableConfig[1]}>
-                            {playerName}
+                            {userData.name}
                           </TableItem>
                           {
                             userData[dayDisplay].map((hole, index) => {
