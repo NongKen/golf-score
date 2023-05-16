@@ -66,6 +66,29 @@ const getRowColor = (userData, userIndex) => {
   return rowColorConfig['"a"'][userIndex % 2]
 }
 
+function getOS() {
+  const userAgent = window.navigator.userAgent
+  const platform = window.navigator.platform
+  const macosPlatforms = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K']
+  const windowsPlatforms = ['Win32', 'Win64', 'Windows', 'WinCE']
+  const iosPlatforms = ['iPhone', 'iPad', 'iPod']
+  let os = null
+
+  if (macosPlatforms.indexOf(platform) !== -1) {
+    os = 'Mac OS';
+  } else if (iosPlatforms.indexOf(platform) !== -1) {
+    os = 'iOS';
+  } else if (windowsPlatforms.indexOf(platform) !== -1) {
+    os = 'Windows';
+  } else if (/Android/.test(userAgent)) {
+    os = 'Android';
+  } else if (!os && /Linux/.test(platform)) {
+    os = 'Linux';
+  }
+
+  return os;
+}
+
 const tableConfig = ['25px', '310px', '30px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '20px', '75px']
 
 
@@ -130,9 +153,6 @@ class Home extends React.Component {
     if (!this.state.textDb || !this.state.caddieData || !this.state.playerDataSet || !this.state.caddieDataSet) {
       return (null)
     }
-
-    console.log(this.state.playerDataSet)
-    console.log(this.state.caddieDataSet)
 
     const mergedData = mergeCaddieData(this.state.playerDataSet, this.state.caddieDataSet)
 
@@ -202,7 +222,7 @@ class Home extends React.Component {
                           <TableItem align="left" width={tableConfig[1]}>
                             {userData.name}
                             {
-                              userData.countryFlag && <span style={{ marginLeft: 4 }}>{userData.countryFlag}</span>
+                              getOS() !== "Windows" && userData.countryFlag && <span style={{ marginLeft: 4 }}>{userData.countryFlag}</span>
                             }
                           </TableItem>
                           <TableItem color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null} width={tableConfig[2]}>
