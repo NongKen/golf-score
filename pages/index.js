@@ -199,10 +199,10 @@ class Home extends React.Component {
                           <TableItem width={tableConfig[0]}>
                             {ranking}
                           </TableItem>
-                          <TableItem align="left" width={tableConfig[1]} style={{ position: 'relative'}}>
+                          <TableItem align="left" width={tableConfig[1]}>
                             {userData.name}
                             {
-                              userData.countryFlag && <span style={{ marginLeft: 4, fontSize: 28, position: 'absolute', top: -3 }}>{userData.countryFlag}</span>
+                              userData.countryFlag && <span style={{ marginLeft: 4 }}>{userData.countryFlag}</span>
                             }
                           </TableItem>
                           <TableItem color={userData.parSummary < 0 ? 'red' : userData.parSummary > 0 ? 'blue' : null} width={tableConfig[2]}>
