@@ -53,9 +53,9 @@ const TableItem = styled.div`
 `
 
 const rowColorConfig = {
-  '"a"': ['#bbbbbb', '#989898'],
-  '"b"': ['#d6adad', '#e494a9'],
-  '"c"': ['#5b8c74', '#9abf9a'],
+  'a': ['#bbbbbb', '#989898'],
+  'b': ['#d6adad', '#e494a9'],
+  'c': ['#5b8c74', '#9abf9a'],
 }
 
 const getRowColor = (userData, userIndex) => {
@@ -63,7 +63,7 @@ const getRowColor = (userData, userIndex) => {
   if (keys.includes(userData.group)) {
     return rowColorConfig[userData.group][userIndex % 2]
   }
-  return rowColorConfig['"a"'][userIndex % 2]
+  return rowColorConfig['a'][userIndex % 2]
 }
 
 function getOS() {
