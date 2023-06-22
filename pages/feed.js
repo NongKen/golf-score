@@ -333,7 +333,7 @@ class Home extends React.Component {
                           <Name feedSize={this.state.feedSize} align="left">
                             {userData.name}
                             {
-                              getOS() !== "Windows" && userData.countryFlag && <span style={{ marginLeft: 8 }}>{userData.countryFlag}</span>
+                              ['Mac OS', 'iOS', 'Android'].includes(getOS()) && userData.countryFlag && <span style={{ marginLeft: 8 }}>{userData.countryFlag}</span>
                             }
                           </Name>
                           {
